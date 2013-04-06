@@ -19,7 +19,7 @@ namespace WindowsFormsApplication1
         public Form1()
         {
             InitializeComponent();
-
+            creationBox.BringToFront();
             initLegend = chart1.Legends[0];
 
             restart.Visible = false;
@@ -685,6 +685,8 @@ namespace WindowsFormsApplication1
             chart1.Width = w;
             chart1.Height = h;
             chart1.Dock = d;
+
+            System.Diagnostics.Process.Start(@filename);
         }
 
         private void showLegend_Click(object sender, EventArgs e)

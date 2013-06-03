@@ -77,6 +77,9 @@
         private System.Windows.Forms.RichTextBox creationBox;
         private System.Windows.Forms.ToolStripTextBox newMCQbox;
         private System.Windows.Forms.ToolStripMenuItem saveNewMCQ;
+        private System.Windows.Forms.ToolStripMenuItem ouvrirLeGraphiqueToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem updateNow;
+        private System.Windows.Forms.ToolStripMenuItem autoUpdate;
     }
 }
 

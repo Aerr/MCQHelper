@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
+using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using System.Text;
-using System.Drawing;
+using System.Net;
 
 namespace WindowsFormsApplication1
 {
@@ -21,11 +22,78 @@ namespace WindowsFormsApplication1
         private string[] seriesArray;
         private int number;
 
+        public void checkUpdate()
+        {
+            try
+            {
+                int currentVersion = 300;
+                string all = "";
+                Uri uri = new Uri("https://www.dropbox.com/s/mvnw2tf6c1067s5/%23%23--%20400%20--%23%23");
+                WebClient Client = new WebClient();
+
+                Client.DownloadFile(uri, "version.ini");
+                System.IO.File.SetLastWriteTimeUtc("version.ini", DateTime.UtcNow);
+
+                using (StreamReader reader = new StreamReader("version.ini"))
+                {
+                    all = reader.ReadToEnd();
+                }
+                all = all.Split(new string[] { "##--" }, StringSplitOptions.RemoveEmptyEntries)[1];
+                all = all.Split(new string[] { "--##" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                all = all.Trim();
+                all = "400";
+
+                if (int.Parse(all) > currentVersion)
+                {
+                    DialogResult result = MessageBox.Show("Une mise à jour est disponible ! Voulez-vous télécharger et installer la nouvelle version maintenant ? (Cela prendra quelques minutes)\n\nSi vous clickez sur oui, la mise à jour s'installera et le programme se relancera.\nSinon, vous pouvez choisir de désactiver la recherche de mise à jour automatique dans les options.",
+                          "Une mise à jour est disponible !",
+                          MessageBoxButtons.YesNo,
+                          MessageBoxIcon.Warning,
+                          MessageBoxDefaultButton.Button2);
+
+
+                    if (result == System.Windows.Forms.DialogResult.Yes)
+                    {
+                        uri = new Uri("https://www.dropbox.com/s/1aal4fcg9qiz7xf/update.exe");
+                        Client.DownloadFile(uri, "update.ini");
+
+                        using (StreamReader reader = new StreamReader("update.ini"))
+                        {
+                            all = reader.ReadToEnd();
+                        }
+                        all = all.Split(new string[] { "\" id=\"default_content_download_button\"" }, StringSplitOptions.None)[0];
+                        string[] temp = all.Split(new string[] { "href=\"" }, StringSplitOptions.None);
+                        all = temp[temp.Length - 1];
+
+                        uri = new Uri(all);
+                        Client.DownloadFile(uri, "update.exe");
+
+                        System.IO.File.Replace("update.exe", "MCQHelper.exe", "old.MCQHelper.exe");
+                        System.IO.File.Delete("update.ini");
+                        System.Diagnostics.Process.Start("MCQHelper.exe");
+                        Environment.Exit(1);
+                    }
+                }
+                Client.Dispose();
+            }
+            catch
+            {
+                MessageBox.Show("Une erreur s'est produite pendant la recherche de mise à jour. Veuillez contacter l'éditeur du logiciel pour résoudre le problème.\nPar mesure de sécurité, la mise à jour automatique a été désactivée.",
+                             "Erreur de mise à jour !",
+                             MessageBoxButtons.OK,
+                             MessageBoxIcon.Error,
+                             MessageBoxDefaultButton.Button2);
+                autoUpdate.Checked = false;
+            }
+        }
+
         public Form1()
         {
             InitializeComponent();
             creationBox.BringToFront();
             initLegend = chart1.Legends[0];
+
+            this.Text = "Assistant aux QCMs - ";
 
             restart.Visible = false;
 
@@ -67,6 +135,10 @@ namespace WindowsFormsApplication1
 
                 checkEnabled();
             }
+                       
+            if (autoUpdate.Checked && DateTime.UtcNow.DayOfYear - System.IO.File.GetLastWriteTimeUtc("version.ini").DayOfYear > 7
+            ||  DateTime.UtcNow.Year > System.IO.File.GetLastWriteTimeUtc("version.ini").Year)
+                checkUpdate();
         }
         private void read_config()
         {
@@ -75,12 +147,22 @@ namespace WindowsFormsApplication1
                 using (StreamReader reader = new StreamReader("config.ini"))
                 {
                     autoSave.Checked = Boolean.Parse(reader.ReadLine());
+                    autoUpdate.Checked = Boolean.Parse(reader.ReadLine());
                     qPath = reader.ReadLine();
                 }
                 bool IsExists = System.IO.Directory.Exists(String.Format("FICHIERS_{0}/", qPath.Substring(0, qPath.Length - 4), nameBox.Text));
 
                 if (!IsExists)
                     System.IO.Directory.CreateDirectory(String.Format("FICHIERS_{0}/", qPath.Substring(0, qPath.Length - 4), nameBox.Text));
+
+                string filename = qPath.Substring(0, qPath.Length - 4) + "_VUEGLOBALE.html";
+                IsExists = System.IO.File.Exists(@filename);
+                if (IsExists)
+                    ouvrirLeGraphiqueToolStripMenuItem.Text = "Ouvrir le graphique";
+                else
+                    ouvrirLeGraphiqueToolStripMenuItem.Text = "Créer le graphique";
+
+                this.Text = "Assistant aux QCMs - " + qPath.Substring(0, qPath.Length - 4);
             }
             catch
             {
@@ -100,6 +182,7 @@ namespace WindowsFormsApplication1
             using (StreamWriter writer = new StreamWriter("config.ini"))
             {
                 writer.WriteLine(autoSave.Checked);
+                writer.WriteLine(autoUpdate.Checked);
                 writer.WriteLine(qPath);
             }
         }
@@ -227,7 +310,7 @@ namespace WindowsFormsApplication1
                     checkedList[i].SetItemChecked(j, false);
                 }
                 if ((((currentPage - 1) * 5) + i) < maxQuestions && answers[(((currentPage - 1) * 5) + i)] != -1)
-                    checkedList[i].SetItemChecked(answers[(((currentPage - 1) * 5) + i)], true);
+                   checkedList[i].SetItemChecked(answers[(((currentPage - 1) * 5) + i)], true);
             }
 
         }
@@ -302,7 +385,6 @@ namespace WindowsFormsApplication1
         {
             if (allChecked(true))
             {
-
                 saveChart.Visible = true;
                 zoomChart.Visible = true;
                 showLegend.Visible = true;
@@ -339,6 +421,14 @@ namespace WindowsFormsApplication1
 
         private void restart_Click(object sender, EventArgs e)
         {
+            restarting(false);
+        }
+
+        private void restarting(bool loading, bool changing = false)
+        {
+            if (autoSave.Checked && (saveChart.Visible || loading) && !changing) 
+                save_Click(null, null);
+
             saveChart.Visible = false;
             zoomChart.Visible = false;
             showLegend.Visible = false;
@@ -356,15 +446,17 @@ namespace WindowsFormsApplication1
             }
             chart1.Visible = false;
 
-            nameBox.Text = "";
-            eraseAllToolStripMenuItem_Click(null, null);
+            if (!loading)
+                nameBox.Text = "";
+
             date.Visible = false;
 
             currentPage = 1;
             checkEnabled();
+            for (int i = 0; i < maxQuestions; i++)
+                answers[i] = -1;
             newQuestions();
         }
-
         private void UpdateChart()
         {
             chart1.Palette = ChartColorPalette.None; 
@@ -381,14 +473,18 @@ namespace WindowsFormsApplication1
             // Data arrays.
             seriesArray = new string[]{ "A", "B", "C", "D" };// "Pas du tout d'accord", "Pas d'accord", "D'accord", "Tout à fait d'accord" };
             totalAnswers = new int[maxQuestions, 4];
-            for (int i = 0; i < maxQuestions; i++)
+
+            if (saveChart.Visible)
             {
-                for (int j = 0; j < 4; j++)
+                for (int i = 0; i < maxQuestions; i++)
                 {
-                    if (answers[i] == j)
-                        totalAnswers[i, j] = 1;
-                    else
-                        totalAnswers[i, j] = 0;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        if (answers[i] == j)
+                            totalAnswers[i, j] = 1;
+                        else
+                            totalAnswers[i, j] = 0;
+                    }
                 }
             }
             string currFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
@@ -409,7 +505,7 @@ namespace WindowsFormsApplication1
                 }
             }
             number = names.Length;
-            if (nameBox.Text == "")
+            if (saveChart.Visible && nameBox.Text == "")
                 number++;
 
             chart1.Titles[0].Text += String.Format(" (sur {0} personnes)", number);
@@ -512,6 +608,7 @@ namespace WindowsFormsApplication1
         {
             if (nameBox.Text != "")
             {
+                allChecked(true);
                 using (StreamWriter writer = new StreamWriter(String.Format("FICHIERS_{0}/{1}.slr", qPath.Substring(0, qPath.Length - 4), nameBox.Text)))
                 {
                     writer.WriteLine(DateTime.Today.ToShortDateString());
@@ -527,12 +624,12 @@ namespace WindowsFormsApplication1
 
         private void load_Click(object sender, EventArgs e)
         {
-            restart_Click(null, null);
+            restarting(true);
             load_client(nameBox.Text);
         }
         private void nameBox_Click(object sender, EventArgs e)
         {
-            restart_Click(null, null);
+            restarting(true);
             load_client((string)nameBox.SelectedItem);
         }
         private void load_client(string txt)
@@ -590,16 +687,12 @@ namespace WindowsFormsApplication1
 
         private void eraseAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            for (int i = 0; i < maxQuestions; i++)
+            if (nameBox.Text != "")
             {
-                answers[i] = -1;
-            }
-            for (int i = 0; i < 5; i++)
-            {
-                for (int j = 0; j < 4; j++)
-                {
-                    checkedList[i].SetItemChecked(j, false);
-                }
+                string currFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                string filename = currFolder + "/FICHIERS_" + qPath.Substring(0, qPath.Length - 4) + "/" + nameBox.Text + ".slr";
+                restarting(false);
+                System.IO.File.Delete(@filename);
             }
         }
 
@@ -632,7 +725,7 @@ namespace WindowsFormsApplication1
                     creationBox.Visible = !creationBox.Visible;
                     saveNewMCQ.Visible = !saveNewMCQ.Visible;
                 }
-                restart_Click(null, null);
+                restarting(false, true);
             }
             else if (qPath == "")
                 quit_Click(sender, e);
@@ -666,22 +759,6 @@ namespace WindowsFormsApplication1
 
         private void saveChart_Click(object sender, EventArgs e)
         {
-            //DockStyle d = chart1.Dock;
-
-            //chart1.Dock = DockStyle.None;
-
-            //int w = chart1.Width, h = chart1.Height;
-            //System.Drawing.Font f = chart1.Legends[0].Font;
-            //bool b = chart1.Legends[0].Enabled;
-
-            //chart1.Legends[0].Enabled = true;
-
-            //chart1.Titles[0].Font = new System.Drawing.Font("Tahoma", chart1.Titles[0].Font.Size * 10);
-            //chart1.Legends[0].Font = new System.Drawing.Font("Arial", 60);
-            
-            //chart1.Width =  100;
-            //chart1.Height = 12000;
-
             string currFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "/";
             string filename = currFolder + qPath.Substring(0, qPath.Length - 4) + "_VUEGLOBALE.html";
             string img_folder = String.Format("FICHIERS_{0}/img/", qPath.Substring(0, qPath.Length - 4), nameBox.Text);
@@ -690,22 +767,15 @@ namespace WindowsFormsApplication1
             if (!IsExists)
                 System.IO.Directory.CreateDirectory(img_folder);
 
-            //chart1.Titles[0].Font = new System.Drawing.Font("Tahoma", chart1.Titles[0].Font.Size / 10);
-            //chart1.Legends[0].Enabled = b;
-            //chart1.Legends[0].Font = f;
-            //chart1.Width = w;
-            //chart1.Height = h;
-            //chart1.Dock = d;
-
-
             using (StreamWriter writer = new StreamWriter(@filename, false, Encoding.UTF8))
             {
+                #region Header/CSS
                 writer.WriteLine("<head><style type= \"text/css\">");
                 writer.WriteLine("* {font-family:\"Arial\", Times, serif;}");
                 writer.WriteLine("h1 {text-align:center; font-size: 3em;}");
                 writer.WriteLine("h2 {font-size: 2em;}");
                 writer.WriteLine("ul {margin-top: 0; list-style-type: none;  font-size: 1.5em; display: inline-block;}");
-                writer.WriteLine("li {width:300px; margin-left:50px; text-align:right; line-height: 1.5;}");
+                writer.WriteLine("li {width:400px; margin-left:50px; text-align:right; line-height: 1.5;}");
                 writer.WriteLine("img { width: 150px; margin-left: 100px; display: inline-block; }");
 
                 writer.WriteLine("span{ display: block; float: left; width:10px; height: 10px; margin: 10px 10px 0 0 ; background: #FFFFFF;}");
@@ -714,6 +784,7 @@ namespace WindowsFormsApplication1
                 writer.WriteLine("ul :nth-child(3) span{ background: #fcb441; }");
                 writer.WriteLine("ul :nth-child(4) span{ background: #e0400a; }");
                 writer.WriteLine("</style></head>");
+                #endregion
 
                 writer.WriteLine("<body>");
                 writer.WriteLine(String.Format("<h1>{0}<br>({1}</h1>", chart1.Titles[0].Text.Split('(')[0], chart1.Titles[0].Text.Split('(')[1]));
@@ -727,7 +798,6 @@ namespace WindowsFormsApplication1
                     temp.PaletteCustomColors = new Color[] { Color.FromArgb(5, 100, 146), Color.FromArgb(134, 173, 0), Color.FromArgb(252, 180, 65), Color.FromArgb(224, 64, 10) };
                     temp.Width = 450;
                     temp.Height = 450;
-
                     temp.ChartAreas.Add("Q" + i);
                     string name = String.Format("Q{0}", i + 1);
                     temp.Series.Add(name);
@@ -739,7 +809,6 @@ namespace WindowsFormsApplication1
                         temp.Series[name].ChartArea = chart1.ChartAreas[i].Name;
                         temp.Series[name].ChartType = SeriesChartType.Pie;
                         temp.Series[name].Points.Add(Math.Round((100 * ((float)totalAnswers[i, j] / number))));
-
                         temp.Series[name].Points[j].LegendText = String.Format("{0}{1} : {2}%", name, seriesArray[j], temp.Series[name].Points[j].YValues[0]);
                     }
                     temp.SaveImage(@currFolder + @img_folder + i + ".jpg", ChartImageFormat.Jpeg);
@@ -772,6 +841,7 @@ namespace WindowsFormsApplication1
                 else
                 {
                     qPath = newMCQbox.Text + ".txt";
+                    creationBox.Text = creationBox.Text.Trim();
                     using (StreamWriter writer = new StreamWriter(qPath))
                     {
                         writer.Write(creationBox.Text);
@@ -787,7 +857,7 @@ namespace WindowsFormsApplication1
             }
             else
             {
-                restart_Click(null, null);
+                restarting(false);
 
                 navigNext.Enabled = false;
                 navigEnd.Enabled = false;
@@ -928,9 +998,12 @@ namespace WindowsFormsApplication1
             this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem10 = new System.Windows.Forms.ToolStripMenuItem();
             this.newMCQ = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateNow = new System.Windows.Forms.ToolStripMenuItem();
+            this.autoUpdate = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripMenuItem();
             this.saveNewMCQ = new System.Windows.Forms.ToolStripMenuItem();
             this.newMCQbox = new System.Windows.Forms.ToolStripTextBox();
+            this.ouvrirLeGraphiqueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.notesBox = new System.Windows.Forms.RichTextBox();
             this.notes = new System.Windows.Forms.Label();
             this.saveChart = new System.Windows.Forms.Button();
@@ -1743,10 +1816,10 @@ namespace WindowsFormsApplication1
             this.autoSave.CheckState = System.Windows.Forms.CheckState.Checked;
             this.autoSave.Name = "autoSave";
             this.autoSave.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.autoSave.Size = new System.Drawing.Size(340, 22);
-            this.autoSave.Text = "Automatiquement sauvegarder à la validation";
-            this.autoSave.ToolTipText = "Activer la sauvegarde automatique lorsque vous valider le QCM (à condition d\'avoi" +
-                "r préalablement entré le nom du salarié)";
+            this.autoSave.Size = new System.Drawing.Size(249, 22);
+            this.autoSave.Text = "Sauvegarde automatique";
+            this.autoSave.ToolTipText = "Activer la sauvegarde automatique lorsque lors de la validation et du chargement " +
+                "(à condition d\'avoir préalablement entré le nom du salarié)";
             // 
             // nameBox
             // 
@@ -1776,11 +1849,12 @@ namespace WindowsFormsApplication1
             this.navigationToolStripMenuItem,
             this.toolStripMenuItem8,
             this.saveNewMCQ,
-            this.newMCQbox});
+            this.newMCQbox,
+            this.ouvrirLeGraphiqueToolStripMenuItem});
             this.menuStrip1.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(609, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(609, 27);
             this.menuStrip1.TabIndex = 27;
             this.menuStrip1.Text = "main";
             // 
@@ -1791,7 +1865,7 @@ namespace WindowsFormsApplication1
             this.toolStripMenuItem4,
             this.toolStripMenuItem5});
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(53, 20);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(53, 23);
             this.toolStripMenuItem2.Text = "Fichier";
             // 
             // toolStripMenuItem3
@@ -1825,22 +1899,22 @@ namespace WindowsFormsApplication1
             this.insérerLaDateToolStripMenuItem});
             this.toolStripMenuItem6.Name = "toolStripMenuItem6";
             this.toolStripMenuItem6.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Delete)));
-            this.toolStripMenuItem6.Size = new System.Drawing.Size(56, 20);
+            this.toolStripMenuItem6.Size = new System.Drawing.Size(56, 23);
             this.toolStripMenuItem6.Text = "Édition";
             // 
             // toolStripMenuItem7
             // 
             this.toolStripMenuItem7.Name = "toolStripMenuItem7";
             this.toolStripMenuItem7.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Delete)));
-            this.toolStripMenuItem7.Size = new System.Drawing.Size(273, 22);
-            this.toolStripMenuItem7.Text = "Effacer toutes les réponses";
+            this.toolStripMenuItem7.Size = new System.Drawing.Size(202, 22);
+            this.toolStripMenuItem7.Text = "Effacer salarié";
             this.toolStripMenuItem7.Click += new System.EventHandler(this.eraseAllToolStripMenuItem_Click);
             // 
             // insérerLaDateToolStripMenuItem
             // 
             this.insérerLaDateToolStripMenuItem.Name = "insérerLaDateToolStripMenuItem";
             this.insérerLaDateToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Insert)));
-            this.insérerLaDateToolStripMenuItem.Size = new System.Drawing.Size(273, 22);
+            this.insérerLaDateToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.insérerLaDateToolStripMenuItem.Text = "Insérer la date";
             this.insérerLaDateToolStripMenuItem.Click += new System.EventHandler(this.insérerLaDateToolStripMenuItem_Click);
             // 
@@ -1851,7 +1925,7 @@ namespace WindowsFormsApplication1
             this.navigPrevious,
             this.navigEnd});
             this.navigationToolStripMenuItem.Name = "navigationToolStripMenuItem";
-            this.navigationToolStripMenuItem.Size = new System.Drawing.Size(75, 20);
+            this.navigationToolStripMenuItem.Size = new System.Drawing.Size(75, 23);
             this.navigationToolStripMenuItem.Text = "Navigation";
             // 
             // navigNext
@@ -1884,37 +1958,54 @@ namespace WindowsFormsApplication1
             this.autoSave,
             this.toolStripMenuItem10,
             this.newMCQ,
+            this.updateNow,
+            this.autoUpdate,
             this.toolStripMenuItem11});
             this.toolStripMenuItem8.Name = "toolStripMenuItem8";
-            this.toolStripMenuItem8.Size = new System.Drawing.Size(61, 20);
+            this.toolStripMenuItem8.Size = new System.Drawing.Size(61, 23);
             this.toolStripMenuItem8.Text = "Options";
             // 
             // toolStripMenuItem10
             // 
             this.toolStripMenuItem10.Name = "toolStripMenuItem10";
-            this.toolStripMenuItem10.Size = new System.Drawing.Size(340, 22);
+            this.toolStripMenuItem10.Size = new System.Drawing.Size(249, 22);
             this.toolStripMenuItem10.Text = "Changer de questionnaire";
             this.toolStripMenuItem10.Click += new System.EventHandler(this.changeMCQ_Click);
             // 
             // newMCQ
             // 
             this.newMCQ.Name = "newMCQ";
-            this.newMCQ.Size = new System.Drawing.Size(340, 22);
+            this.newMCQ.Size = new System.Drawing.Size(249, 22);
             this.newMCQ.Text = "Créer un nouveau questionnaire";
             this.newMCQ.Click += new System.EventHandler(this.CreateMCQ_Click);
+            // 
+            // updateNow
+            // 
+            this.updateNow.Name = "updateNow";
+            this.updateNow.Size = new System.Drawing.Size(249, 22);
+            this.updateNow.Text = "Mettre à jour maintenant";
+            this.updateNow.Click += new System.EventHandler(this.updateNow_Click);
+            // 
+            // autoUpdate
+            // 
+            this.autoUpdate.Checked = true;
+            this.autoUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.autoUpdate.Name = "autoUpdate";
+            this.autoUpdate.Size = new System.Drawing.Size(249, 22);
+            this.autoUpdate.Text = "Vérifier les mises à jour";
             // 
             // toolStripMenuItem11
             // 
             this.toolStripMenuItem11.Name = "toolStripMenuItem11";
             this.toolStripMenuItem11.ShortcutKeys = System.Windows.Forms.Keys.F1;
-            this.toolStripMenuItem11.Size = new System.Drawing.Size(340, 22);
+            this.toolStripMenuItem11.Size = new System.Drawing.Size(249, 22);
             this.toolStripMenuItem11.Text = "À propos";
             this.toolStripMenuItem11.Click += new System.EventHandler(this.about_Click);
             // 
             // saveNewMCQ
             // 
             this.saveNewMCQ.Name = "saveNewMCQ";
-            this.saveNewMCQ.Size = new System.Drawing.Size(129, 20);
+            this.saveNewMCQ.Size = new System.Drawing.Size(129, 23);
             this.saveNewMCQ.Text = "Sauvegarder le QCM";
             this.saveNewMCQ.Visible = false;
             this.saveNewMCQ.Click += new System.EventHandler(this.CreateMCQ_Click);
@@ -1929,6 +2020,13 @@ namespace WindowsFormsApplication1
             this.newMCQbox.TextBoxTextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.newMCQbox.Visible = false;
             this.newMCQbox.Click += new System.EventHandler(this.newMCQbox_Click);
+            // 
+            // ouvrirLeGraphiqueToolStripMenuItem
+            // 
+            this.ouvrirLeGraphiqueToolStripMenuItem.Name = "ouvrirLeGraphiqueToolStripMenuItem";
+            this.ouvrirLeGraphiqueToolStripMenuItem.Size = new System.Drawing.Size(122, 23);
+            this.ouvrirLeGraphiqueToolStripMenuItem.Text = "Ouvrir le graphique";
+            this.ouvrirLeGraphiqueToolStripMenuItem.Click += new System.EventHandler(this.ouvrirLeGraphiqueToolStripMenuItem_Click);
             // 
             // notesBox
             // 
@@ -2007,7 +2105,7 @@ namespace WindowsFormsApplication1
             // end
             // 
             this.end.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.end.Image = global::MCQHelper.Properties.Resources.Check_icon1;
+            this.end.Image = global::MCQHelper.Properties.Resources.checkicon;
             this.end.Location = new System.Drawing.Point(283, 624);
             this.end.Name = "end";
             this.end.Size = new System.Drawing.Size(48, 48);
@@ -2078,6 +2176,26 @@ namespace WindowsFormsApplication1
         private void nameBox_MouseEnter(object sender, EventArgs e)
         {
             nameBox_Dropdown(sender, e);
+        }
+
+        private void ouvrirLeGraphiqueToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string currFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "/";
+            string filename = currFolder + qPath.Substring(0, qPath.Length - 4) + "_VUEGLOBALE.html";
+            bool IsExists = System.IO.File.Exists(@filename);
+            if (IsExists)
+                System.Diagnostics.Process.Start(@filename);
+            else
+            {
+                UpdateChart();
+                saveChart_Click(null, null);
+                ouvrirLeGraphiqueToolStripMenuItem.Text = "Ouvrir le graphique";
+            }
+        }
+
+        private void updateNow_Click(object sender, EventArgs e)
+        {
+            checkUpdate();
         }
 
     }

@@ -60,9 +60,9 @@ namespace MCQHelper.Properties {
             }
         }
         
-        internal static System.Drawing.Bitmap Check_icon1 {
+        internal static System.Drawing.Bitmap checkicon {
             get {
-                object obj = ResourceManager.GetObject("Check-icon1", resourceCulture);
+                object obj = ResourceManager.GetObject("checkicon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

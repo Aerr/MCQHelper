@@ -5,12 +5,22 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCQHelper", "WindowsFormsAp
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
 		Debug|x86 = Debug|x86
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Debug|Win32.ActiveCfg = Debug|x86
 		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Debug|x86.ActiveCfg = Release|x86
 		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Debug|x86.Build.0 = Release|x86
+		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Release|Mixed Platforms.Build.0 = Release|x86
+		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Release|Win32.ActiveCfg = Release|x86
 		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Release|x86.ActiveCfg = Release|x86
 		{F4537E2A-9DB4-45FF-9D77-9200728B95AD}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection

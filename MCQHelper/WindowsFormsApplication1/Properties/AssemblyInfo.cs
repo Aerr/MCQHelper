@@ -6,11 +6,11 @@ using System.Resources;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Un logiciel d'aide au QCMs")]
-[assembly: AssemblyDescription("Un logiciel d'aide au QCMs")]
+[assembly: AssemblyTitle("Un logiciel d'aide aux QCMs")]
+[assembly: AssemblyDescription("Un logiciel d'aide aux QCMs")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Aêr")]
-[assembly: AssemblyProduct("MCQHelper - Assistant au QCM")]
+[assembly: AssemblyProduct("MCQHelper - Assistant aux QCMs")]
 [assembly: AssemblyCopyright("Copyright ©  2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

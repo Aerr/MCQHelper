@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using System.Text;
+using System.Drawing;
 
 namespace WindowsFormsApplication1
 {
@@ -15,6 +17,9 @@ namespace WindowsFormsApplication1
         CheckedListBox[] checkedList;
         string qPath;
         Legend initLegend;
+        private int[,] totalAnswers;
+        private string[] seriesArray;
+        private int number;
 
         public Form1()
         {
@@ -362,6 +367,8 @@ namespace WindowsFormsApplication1
 
         private void UpdateChart()
         {
+            chart1.Palette = ChartColorPalette.None; 
+            chart1.PaletteCustomColors = new Color[]{Color.FromArgb(5,100,146), Color.FromArgb(134,173,0), Color.FromArgb(252,180,65), Color.FromArgb(224,64,10)};
             chart1.Titles.Clear();
             chart1.Titles.Add("Vue globale des réponses au questionnaire : ");
             chart1.Titles[0].Text += String.Format("\"{0}\"", qPath.Substring(0, qPath.Length - 4));
@@ -372,8 +379,8 @@ namespace WindowsFormsApplication1
             chart1.Legends.Clear();
             chart1.Legends.Add(initLegend);
             // Data arrays.
-            string[] seriesArray = { "A", "B", "C", "D" };// "Pas du tout d'accord", "Pas d'accord", "D'accord", "Tout à fait d'accord" };
-            int[,] totalAnswers = new int[maxQuestions, 4];
+            seriesArray = new string[]{ "A", "B", "C", "D" };// "Pas du tout d'accord", "Pas d'accord", "D'accord", "Tout à fait d'accord" };
+            totalAnswers = new int[maxQuestions, 4];
             for (int i = 0; i < maxQuestions; i++)
             {
                 for (int j = 0; j < 4; j++)
@@ -401,7 +408,7 @@ namespace WindowsFormsApplication1
                     }
                 }
             }
-            int number = names.Length;
+            number = names.Length;
             if (nameBox.Text == "")
                 number++;
 
@@ -423,12 +430,9 @@ namespace WindowsFormsApplication1
                     chart1.Series[name].ChartType = SeriesChartType.Pie;
                     chart1.Series[name].Points.Add(Math.Round((100 * ((float)totalAnswers[i, j] / number))));
 
-                    //string nam = "";
-                    //if (j == 0)
-                    //    nam = String.Format("Q{0}-", i + 1);
-
                     chart1.Series[name].Points[j].LegendText = String.Format("{0}{1} : {2}%", name, seriesArray[j], chart1.Series[name].Points[j].YValues[0]);
                 }
+            
             }
             chart1.Legends[0].Enabled = false;
         }
@@ -662,29 +666,88 @@ namespace WindowsFormsApplication1
 
         private void saveChart_Click(object sender, EventArgs e)
         {
-            DockStyle d = chart1.Dock;
+            //DockStyle d = chart1.Dock;
 
-            chart1.Dock = DockStyle.None;
+            //chart1.Dock = DockStyle.None;
 
-            int w = chart1.Width, h = chart1.Height;
-            System.Drawing.Font f = chart1.Legends[0].Font;
-            bool b = chart1.Legends[0].Enabled;
+            //int w = chart1.Width, h = chart1.Height;
+            //System.Drawing.Font f = chart1.Legends[0].Font;
+            //bool b = chart1.Legends[0].Enabled;
 
-            chart1.Titles[0].Font = new System.Drawing.Font("Tahoma", chart1.Titles[0].Font.Size * 4);
-            chart1.Legends[0].Enabled = true;
-            string currFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-            chart1.Legends[0].Font = new System.Drawing.Font("Arial", 24);
-            chart1.Width = 2400;
-            chart1.Height = 1800;
-            string filename = currFolder + "/Chart_" + qPath.Substring(0, qPath.Length - 4) + ".bmp";
-            chart1.SaveImage(filename, ChartImageFormat.Png);
+            //chart1.Legends[0].Enabled = true;
 
-            chart1.Titles[0].Font = new System.Drawing.Font("Tahoma", chart1.Titles[0].Font.Size / 4);
-            chart1.Legends[0].Enabled = b;
-            chart1.Legends[0].Font = f;
-            chart1.Width = w;
-            chart1.Height = h;
-            chart1.Dock = d;
+            //chart1.Titles[0].Font = new System.Drawing.Font("Tahoma", chart1.Titles[0].Font.Size * 10);
+            //chart1.Legends[0].Font = new System.Drawing.Font("Arial", 60);
+            
+            //chart1.Width =  100;
+            //chart1.Height = 12000;
+
+            string currFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "/";
+            string filename = currFolder + qPath.Substring(0, qPath.Length - 4) + "_VUEGLOBALE.html";
+            string img_folder = String.Format("FICHIERS_{0}/img/", qPath.Substring(0, qPath.Length - 4), nameBox.Text);
+
+            bool IsExists = System.IO.Directory.Exists(img_folder);
+            if (!IsExists)
+                System.IO.Directory.CreateDirectory(img_folder);
+
+            //chart1.Titles[0].Font = new System.Drawing.Font("Tahoma", chart1.Titles[0].Font.Size / 10);
+            //chart1.Legends[0].Enabled = b;
+            //chart1.Legends[0].Font = f;
+            //chart1.Width = w;
+            //chart1.Height = h;
+            //chart1.Dock = d;
+
+
+            using (StreamWriter writer = new StreamWriter(@filename, false, Encoding.UTF8))
+            {
+                writer.WriteLine("<head><style type= \"text/css\">");
+                writer.WriteLine("* {font-family:\"Arial\", Times, serif;}");
+                writer.WriteLine("h1 {text-align:center; font-size: 3em;}");
+                writer.WriteLine("h2 {font-size: 2em;}");
+                writer.WriteLine("ul {margin-top: 0; list-style-type: none;  font-size: 1.5em; display: inline-block;}");
+                writer.WriteLine("li {width:300px; margin-left:50px; text-align:right; line-height: 1.5;}");
+                writer.WriteLine("img { width: 150px; margin-left: 100px; display: inline-block; }");
+
+                writer.WriteLine("span{ display: block; float: left; width:10px; height: 10px; margin: 10px 10px 0 0 ; background: #FFFFFF;}");
+                writer.WriteLine("ul :nth-child(1) span{ background: #056492; }");
+                writer.WriteLine("ul :nth-child(2) span{ background: #86AD00; }");
+                writer.WriteLine("ul :nth-child(3) span{ background: #fcb441; }");
+                writer.WriteLine("ul :nth-child(4) span{ background: #e0400a; }");
+                writer.WriteLine("</style></head>");
+
+                writer.WriteLine("<body>");
+                writer.WriteLine(String.Format("<h1>{0}<br>({1}</h1>", chart1.Titles[0].Text.Split('(')[0], chart1.Titles[0].Text.Split('(')[1]));
+                for (int i = 0; i < maxQuestions; i++)
+                {
+                    writer.WriteLine(String.Format("<h2>{0}. {1}</h2>", (i + 1), questions[i]));
+                    writer.WriteLine("<div>\n<ul>");
+
+                    Chart temp = new Chart();
+                    temp.Palette = ChartColorPalette.None;
+                    temp.PaletteCustomColors = new Color[] { Color.FromArgb(5, 100, 146), Color.FromArgb(134, 173, 0), Color.FromArgb(252, 180, 65), Color.FromArgb(224, 64, 10) };
+                    temp.Width = 450;
+                    temp.Height = 450;
+
+                    temp.ChartAreas.Add("Q" + i);
+                    string name = String.Format("Q{0}", i + 1);
+                    temp.Series.Add(name);
+
+                    for (int j = 0; j < 4; j++)
+                    {
+                        writer.WriteLine(String.Format("<li><span></span>{0} : {1}</li>", checkedList[0].Items[j], (chart1.Series[i].Points[j].LegendText.Split(':'))[1]));
+
+                        temp.Series[name].ChartArea = chart1.ChartAreas[i].Name;
+                        temp.Series[name].ChartType = SeriesChartType.Pie;
+                        temp.Series[name].Points.Add(Math.Round((100 * ((float)totalAnswers[i, j] / number))));
+
+                        temp.Series[name].Points[j].LegendText = String.Format("{0}{1} : {2}%", name, seriesArray[j], temp.Series[name].Points[j].YValues[0]);
+                    }
+                    temp.SaveImage(@currFolder + @img_folder + i + ".jpg", ChartImageFormat.Jpeg);
+                    writer.WriteLine("</ul><img src=\"" + @img_folder + i + ".jpg\"</img>\n</div>");
+                }
+                writer.WriteLine("</body>");
+            }
+
 
             System.Diagnostics.Process.Start(@filename);
         }
@@ -1356,13 +1419,19 @@ namespace WindowsFormsApplication1
             this.chart1.ChartAreas.Add(chartArea33);
             this.chart1.ChartAreas.Add(chartArea34);
             legend1.BackColor = System.Drawing.Color.Transparent;
+            legend1.BorderWidth = 0;
             legend1.Font = new System.Drawing.Font("Tahoma", 8F);
             legend1.IsTextAutoFit = false;
-            legend1.ItemColumnSpacing = 5;
+            legend1.ItemColumnSpacing = 0;
             legend1.Name = "Legend1";
             this.chart1.Legends.Add(legend1);
             this.chart1.Location = new System.Drawing.Point(12, 74);
             this.chart1.Name = "chart1";
+            this.chart1.PaletteCustomColors = new System.Drawing.Color[] {
+        System.Drawing.Color.FromArgb(((int)(((byte)(5)))), ((int)(((byte)(100)))), ((int)(((byte)(146))))),
+        System.Drawing.Color.FromArgb(((int)(((byte)(134)))), ((int)(((byte)(173)))), ((int)(((byte)(0))))),
+        System.Drawing.Color.FromArgb(((int)(((byte)(252)))), ((int)(((byte)(180)))), ((int)(((byte)(65))))),
+        System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(64)))), ((int)(((byte)(10)))))};
             series1.ChartArea = "ChartArea1";
             series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Pie;
             series1.Legend = "Legend1";
@@ -1691,6 +1760,7 @@ namespace WindowsFormsApplication1
             this.nameBox.TabIndex = 26;
             this.nameBox.SelectionChangeCommitted += new System.EventHandler(this.nameBox_Click);
             this.nameBox.Enter += new System.EventHandler(this.nameBox_Dropdown);
+            this.nameBox.MouseEnter += new System.EventHandler(this.nameBox_MouseEnter);
             // 
             // openFileDialog1
             // 
@@ -2004,6 +2074,11 @@ namespace WindowsFormsApplication1
 
         }
         #endregion
+
+        private void nameBox_MouseEnter(object sender, EventArgs e)
+        {
+            nameBox_Dropdown(sender, e);
+        }
 
     }
 }

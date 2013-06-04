@@ -80,6 +80,7 @@
         private System.Windows.Forms.ToolStripMenuItem ouvrirLeGraphiqueToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem updateNow;
         private System.Windows.Forms.ToolStripMenuItem autoUpdate;
+        private System.Windows.Forms.ToolStripMenuItem aideToolStripMenuItem;
     }
 }
 

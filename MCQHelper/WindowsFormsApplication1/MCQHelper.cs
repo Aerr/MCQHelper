@@ -11,79 +11,95 @@ namespace WindowsFormsApplication1
 {
     public partial class Form1 : Form
     {
-        int currentPage, maxPage, maxQuestions;
-        string[] questions;
-        int[] answers;
-        Label[] labels;
-        CheckedListBox[] checkedList;
-        string qPath;
-        Legend initLegend;
+        private static int VERSION = 300;
+
+        private int currentPage, maxPage, maxQuestions;
+        private string[] questions;
+        private int[] answers;
+        private Label[] labels;
+        private CheckedListBox[] checkedList;
+        private string qPath;
+        private Legend initLegend;
         private int[,] totalAnswers;
         private string[] seriesArray;
         private int number;
 
         public void checkUpdate()
         {
-            try
+
+            DialogResult res = MessageBox.Show("Le logiciel va maintenant rechercher une mise à jour (cela peut prendre quelques secondes).\nVoulez-vous continuer ?",
+                    "Une mise à jour est disponible !",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+
+            if (res == System.Windows.Forms.DialogResult.Yes)
             {
-                int currentVersion = 300;
-                string all = "";
-                Uri uri = new Uri("https://www.dropbox.com/s/mvnw2tf6c1067s5/%23%23--%20400%20--%23%23");
-                WebClient Client = new WebClient();
-
-                Client.DownloadFile(uri, "version.ini");
-                System.IO.File.SetLastWriteTimeUtc("version.ini", DateTime.UtcNow);
-
-                using (StreamReader reader = new StreamReader("version.ini"))
+                try
                 {
-                    all = reader.ReadToEnd();
-                }
-                all = all.Split(new string[] { "##--" }, StringSplitOptions.RemoveEmptyEntries)[1];
-                all = all.Split(new string[] { "--##" }, StringSplitOptions.RemoveEmptyEntries)[0];
-                all = all.Trim();
-                all = "400";
+                    string all = "";
+                    Uri uri = new Uri("https://www.dropbox.com/sh/io5u6kd7ja8okvv/5w_k2YPkYI");
+                    WebClient Client = new WebClient();
+                    Client.Proxy = null;
 
-                if (int.Parse(all) > currentVersion)
-                {
-                    DialogResult result = MessageBox.Show("Une mise à jour est disponible ! Voulez-vous télécharger et installer la nouvelle version maintenant ? (Cela prendra quelques minutes)\n\nSi vous clickez sur oui, la mise à jour s'installera et le programme se relancera.\nSinon, vous pouvez choisir de désactiver la recherche de mise à jour automatique dans les options.",
-                          "Une mise à jour est disponible !",
-                          MessageBoxButtons.YesNo,
-                          MessageBoxIcon.Warning,
-                          MessageBoxDefaultButton.Button2);
+                    Client.DownloadFile(uri, "version.ini");
+                    System.IO.File.SetLastWriteTimeUtc("version.ini", DateTime.UtcNow);
 
-
-                    if (result == System.Windows.Forms.DialogResult.Yes)
+                    using (StreamReader reader = new StreamReader("version.ini"))
                     {
-                        uri = new Uri("https://www.dropbox.com/s/1aal4fcg9qiz7xf/update.exe");
-                        Client.DownloadFile(uri, "update.ini");
-
-                        using (StreamReader reader = new StreamReader("update.ini"))
-                        {
-                            all = reader.ReadToEnd();
-                        }
-                        all = all.Split(new string[] { "\" id=\"default_content_download_button\"" }, StringSplitOptions.None)[0];
-                        string[] temp = all.Split(new string[] { "href=\"" }, StringSplitOptions.None);
-                        all = temp[temp.Length - 1];
-
-                        uri = new Uri(all);
-                        Client.DownloadFile(uri, "update.exe");
-
-                        System.IO.File.Replace("update.exe", "MCQHelper.exe", "old.MCQHelper.exe");
-                        System.IO.File.Delete("update.ini");
-                        System.Diagnostics.Process.Start("MCQHelper.exe");
-                        Environment.Exit(1);
+                        all = reader.ReadToEnd();
                     }
+                    all = all.Split(new string[] { "##--" }, StringSplitOptions.RemoveEmptyEntries)[1];
+                    all = all.Split(new string[] { "--##" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                    all = all.Trim();
+
+                    if (int.Parse(all) > VERSION)
+                    {
+                        DialogResult result = MessageBox.Show("Une mise à jour est disponible ! Voulez-vous télécharger et installer la nouvelle version maintenant ? (Cela prendra quelques secondes)\n\nSi vous clickez sur oui, la mise à jour s'installera et le programme se relancera.\nSinon, vous pouvez choisir de désactiver la recherche de mise à jour automatique dans les options.",
+                              "Une mise à jour est disponible !",
+                              MessageBoxButtons.YesNo,
+                              MessageBoxIcon.Warning,
+                              MessageBoxDefaultButton.Button2);
+
+
+                        if (result == System.Windows.Forms.DialogResult.Yes)
+                        {
+                            uri = new Uri("https://www.dropbox.com/s/1aal4fcg9qiz7xf/update.exe");
+                            Client.DownloadFile(uri, "update.ini");
+
+                            using (StreamReader reader = new StreamReader("update.ini"))
+                            {
+                                all = reader.ReadToEnd();
+                            }
+                            all = all.Split(new string[] { "\" id=\"default_content_download_button\"" }, StringSplitOptions.None)[0];
+                            string[] temp = all.Split(new string[] { "href=\"" }, StringSplitOptions.None);
+                            all = temp[temp.Length - 1];
+
+                            uri = new Uri(all);
+                            Client.DownloadFile(uri, "update.exe");
+
+                            System.IO.File.Replace("update.exe", "MCQHelper.exe", "old.MCQHelper.exe");
+                            System.IO.File.Delete("update.ini");
+                            System.Diagnostics.Process.Start("MCQHelper.exe");
+                            Environment.Exit(1);
+                        }
+                    }
+                    MessageBox.Show("Aucune mise à jour n'a été trouvée.\nVous pouvez désactiver la recherche de mise à jour automatique dans les options.",
+                              "Aucune mise à jour n'a été trouvée.",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Information,
+                              MessageBoxDefaultButton.Button2);
+                    Client.Dispose();
                 }
-                Client.Dispose();
-            }
-            catch
-            {
-                MessageBox.Show("Une erreur s'est produite pendant la recherche de mise à jour. Veuillez contacter l'éditeur du logiciel pour résoudre le problème.\nPar mesure de sécurité, la mise à jour automatique a été désactivée.",
-                             "Erreur de mise à jour !",
-                             MessageBoxButtons.OK,
-                             MessageBoxIcon.Error,
-                             MessageBoxDefaultButton.Button2);
-                autoUpdate.Checked = false;
+                catch
+                {
+                    MessageBox.Show("Une erreur s'est produite pendant la recherche de mise à jour. Veuillez contacter l'éditeur du logiciel pour résoudre le problème.\nPar mesure de sécurité, la mise à jour automatique a été désactivée.",
+                                 "Erreur de mise à jour !",
+                                 MessageBoxButtons.OK,
+                                 MessageBoxIcon.Error,
+                                 MessageBoxDefaultButton.Button2);
+                    autoUpdate.Checked = false;
+                }
             }
         }
 
@@ -1000,6 +1016,7 @@ namespace WindowsFormsApplication1
             this.newMCQ = new System.Windows.Forms.ToolStripMenuItem();
             this.updateNow = new System.Windows.Forms.ToolStripMenuItem();
             this.autoUpdate = new System.Windows.Forms.ToolStripMenuItem();
+            this.aideToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripMenuItem();
             this.saveNewMCQ = new System.Windows.Forms.ToolStripMenuItem();
             this.newMCQbox = new System.Windows.Forms.ToolStripTextBox();
@@ -1960,6 +1977,7 @@ namespace WindowsFormsApplication1
             this.newMCQ,
             this.updateNow,
             this.autoUpdate,
+            this.aideToolStripMenuItem,
             this.toolStripMenuItem11});
             this.toolStripMenuItem8.Name = "toolStripMenuItem8";
             this.toolStripMenuItem8.Size = new System.Drawing.Size(61, 23);
@@ -1993,6 +2011,13 @@ namespace WindowsFormsApplication1
             this.autoUpdate.Name = "autoUpdate";
             this.autoUpdate.Size = new System.Drawing.Size(249, 22);
             this.autoUpdate.Text = "Vérifier les mises à jour";
+            // 
+            // aideToolStripMenuItem
+            // 
+            this.aideToolStripMenuItem.Name = "aideToolStripMenuItem";
+            this.aideToolStripMenuItem.Size = new System.Drawing.Size(249, 22);
+            this.aideToolStripMenuItem.Text = "Aide";
+            this.aideToolStripMenuItem.Click += new System.EventHandler(this.aideToolStripMenuItem_Click);
             // 
             // toolStripMenuItem11
             // 
@@ -2181,15 +2206,21 @@ namespace WindowsFormsApplication1
         private void ouvrirLeGraphiqueToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string currFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + "/";
-            string filename = currFolder + qPath.Substring(0, qPath.Length - 4) + "_VUEGLOBALE.html";
-            bool IsExists = System.IO.File.Exists(@filename);
-            if (IsExists)
-                System.Diagnostics.Process.Start(@filename);
-            else
+            string[] names = Directory.GetFiles(currFolder + String.Format(@"FICHIERS_{0}/", qPath.Substring(0, qPath.Length - 4), nameBox.Text), "*.slr");
+            if (names.Length > 0)
             {
                 UpdateChart();
                 saveChart_Click(null, null);
                 ouvrirLeGraphiqueToolStripMenuItem.Text = "Ouvrir le graphique";
+            }
+            else
+            {
+                MessageBox.Show("Aucun salarié n'a été enregistré. Vous ne pouvez donc pas visualiser le graphique.",
+                            "Aucun salarié enregistré.",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error,
+                            MessageBoxDefaultButton.Button2);
+        
             }
         }
 
@@ -2198,5 +2229,10 @@ namespace WindowsFormsApplication1
             checkUpdate();
         }
 
+        private void aideToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (System.IO.File.Exists("Manuel.pdf"))
+                System.Diagnostics.Process.Start("Manuel.pdf");
+        }
     }
 }

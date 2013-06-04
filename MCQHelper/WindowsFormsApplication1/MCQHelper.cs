@@ -151,9 +151,9 @@ namespace WindowsFormsApplication1
 
                 checkEnabled();
             }
-                       
+
             if (autoUpdate.Checked && DateTime.UtcNow.DayOfYear - System.IO.File.GetLastWriteTimeUtc("version.ini").DayOfYear > 7
-            ||  DateTime.UtcNow.Year > System.IO.File.GetLastWriteTimeUtc("version.ini").Year)
+            || DateTime.UtcNow.Year > System.IO.File.GetLastWriteTimeUtc("version.ini").Year)
                 checkUpdate();
         }
         private void read_config()
@@ -326,7 +326,7 @@ namespace WindowsFormsApplication1
                     checkedList[i].SetItemChecked(j, false);
                 }
                 if ((((currentPage - 1) * 5) + i) < maxQuestions && answers[(((currentPage - 1) * 5) + i)] != -1)
-                   checkedList[i].SetItemChecked(answers[(((currentPage - 1) * 5) + i)], true);
+                    checkedList[i].SetItemChecked(answers[(((currentPage - 1) * 5) + i)], true);
             }
 
         }
@@ -423,7 +423,7 @@ namespace WindowsFormsApplication1
                 {
                     UpdateChart();
                 }
-                catch (Exception error)  
+                catch (Exception error)
                 {
                     Clipboard.SetText(error.ToString());
                     MessageBox.Show("Une erreur vient de se produire. Pour plus de stabilité, cliquez sur OK puis enregistrer votre travail.\nVeuillez transmettre cette erreur (elle est automatiquement copiée dans le presse-papier, il vous suffit de la coller) :\n" + error,
@@ -442,12 +442,14 @@ namespace WindowsFormsApplication1
 
         private void restarting(bool loading, bool changing = false)
         {
-            if (autoSave.Checked && (saveChart.Visible || loading) && !changing) 
+            if (autoSave.Checked && (saveChart.Visible || loading) && !changing)
                 save_Click(null, null);
 
             saveChart.Visible = false;
             zoomChart.Visible = false;
             showLegend.Visible = false;
+
+            ouvrirLeGraphiqueToolStripMenuItem.Visible = true;
 
             end.Visible = true;
             notes.Visible = false;
@@ -475,8 +477,8 @@ namespace WindowsFormsApplication1
         }
         private void UpdateChart()
         {
-            chart1.Palette = ChartColorPalette.None; 
-            chart1.PaletteCustomColors = new Color[]{Color.FromArgb(5,100,146), Color.FromArgb(134,173,0), Color.FromArgb(252,180,65), Color.FromArgb(224,64,10)};
+            chart1.Palette = ChartColorPalette.None;
+            chart1.PaletteCustomColors = new Color[] { Color.FromArgb(5, 100, 146), Color.FromArgb(134, 173, 0), Color.FromArgb(252, 180, 65), Color.FromArgb(224, 64, 10) };
             chart1.Titles.Clear();
             chart1.Titles.Add("Vue globale des réponses au questionnaire : ");
             chart1.Titles[0].Text += String.Format("\"{0}\"", qPath.Substring(0, qPath.Length - 4));
@@ -487,7 +489,7 @@ namespace WindowsFormsApplication1
             chart1.Legends.Clear();
             chart1.Legends.Add(initLegend);
             // Data arrays.
-            seriesArray = new string[]{ "A", "B", "C", "D" };// "Pas du tout d'accord", "Pas d'accord", "D'accord", "Tout à fait d'accord" };
+            seriesArray = new string[] { "A", "B", "C", "D" };// "Pas du tout d'accord", "Pas d'accord", "D'accord", "Tout à fait d'accord" };
             totalAnswers = new int[maxQuestions, 4];
 
             if (saveChart.Visible)
@@ -508,7 +510,7 @@ namespace WindowsFormsApplication1
             for (int i = 0; i < names.Length; i++)
             {
                 string temp = names[i].Substring(names[i].LastIndexOf('\\') + 1, (names[i].LastIndexOf('.') - names[i].LastIndexOf('\\') - 1));
-                if (temp != nameBox.Text)
+                if (!saveChart.Visible || temp != nameBox.Text)
                 {
                     using (StreamReader reader = new StreamReader(String.Format("FICHIERS_{0}/{1}.slr", qPath.Substring(0, qPath.Length - 4), temp)))
                     {
@@ -544,7 +546,7 @@ namespace WindowsFormsApplication1
 
                     chart1.Series[name].Points[j].LegendText = String.Format("{0}{1} : {2}%", name, seriesArray[j], chart1.Series[name].Points[j].YValues[0]);
                 }
-            
+
             }
             chart1.Legends[0].Enabled = false;
         }
@@ -856,6 +858,7 @@ namespace WindowsFormsApplication1
                 }
                 else
                 {
+                    ouvrirLeGraphiqueToolStripMenuItem.Visible = true;
                     qPath = newMCQbox.Text + ".txt";
                     creationBox.Text = creationBox.Text.Trim();
                     using (StreamWriter writer = new StreamWriter(qPath))
@@ -879,6 +882,7 @@ namespace WindowsFormsApplication1
                 navigEnd.Enabled = false;
                 navigPrevious.Enabled = false;
 
+                ouvrirLeGraphiqueToolStripMenuItem.Visible = false;
                 newMCQbox.Visible = !newMCQbox.Visible;
                 creationBox.Visible = !creationBox.Visible;
                 saveNewMCQ.Visible = !saveNewMCQ.Visible;
@@ -1871,7 +1875,7 @@ namespace WindowsFormsApplication1
             this.menuStrip1.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(609, 27);
+            this.menuStrip1.Size = new System.Drawing.Size(609, 24);
             this.menuStrip1.TabIndex = 27;
             this.menuStrip1.Text = "main";
             // 
@@ -1882,7 +1886,7 @@ namespace WindowsFormsApplication1
             this.toolStripMenuItem4,
             this.toolStripMenuItem5});
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(53, 23);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(53, 20);
             this.toolStripMenuItem2.Text = "Fichier";
             // 
             // toolStripMenuItem3
@@ -1916,7 +1920,7 @@ namespace WindowsFormsApplication1
             this.insérerLaDateToolStripMenuItem});
             this.toolStripMenuItem6.Name = "toolStripMenuItem6";
             this.toolStripMenuItem6.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Delete)));
-            this.toolStripMenuItem6.Size = new System.Drawing.Size(56, 23);
+            this.toolStripMenuItem6.Size = new System.Drawing.Size(56, 20);
             this.toolStripMenuItem6.Text = "Édition";
             // 
             // toolStripMenuItem7
@@ -1942,7 +1946,7 @@ namespace WindowsFormsApplication1
             this.navigPrevious,
             this.navigEnd});
             this.navigationToolStripMenuItem.Name = "navigationToolStripMenuItem";
-            this.navigationToolStripMenuItem.Size = new System.Drawing.Size(75, 23);
+            this.navigationToolStripMenuItem.Size = new System.Drawing.Size(75, 20);
             this.navigationToolStripMenuItem.Text = "Navigation";
             // 
             // navigNext
@@ -1980,7 +1984,7 @@ namespace WindowsFormsApplication1
             this.aideToolStripMenuItem,
             this.toolStripMenuItem11});
             this.toolStripMenuItem8.Name = "toolStripMenuItem8";
-            this.toolStripMenuItem8.Size = new System.Drawing.Size(61, 23);
+            this.toolStripMenuItem8.Size = new System.Drawing.Size(61, 20);
             this.toolStripMenuItem8.Text = "Options";
             // 
             // toolStripMenuItem10
@@ -2049,7 +2053,7 @@ namespace WindowsFormsApplication1
             // ouvrirLeGraphiqueToolStripMenuItem
             // 
             this.ouvrirLeGraphiqueToolStripMenuItem.Name = "ouvrirLeGraphiqueToolStripMenuItem";
-            this.ouvrirLeGraphiqueToolStripMenuItem.Size = new System.Drawing.Size(122, 23);
+            this.ouvrirLeGraphiqueToolStripMenuItem.Size = new System.Drawing.Size(122, 20);
             this.ouvrirLeGraphiqueToolStripMenuItem.Text = "Ouvrir le graphique";
             this.ouvrirLeGraphiqueToolStripMenuItem.Click += new System.EventHandler(this.ouvrirLeGraphiqueToolStripMenuItem_Click);
             // 
@@ -2220,7 +2224,7 @@ namespace WindowsFormsApplication1
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error,
                             MessageBoxDefaultButton.Button2);
-        
+
             }
         }
 
